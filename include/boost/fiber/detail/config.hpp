@@ -52,4 +52,8 @@ namespace fibers {
 #endif
 }}
 
+#if !defined(StackAllocator)
+# define StackAllocator boost::fibers::stack_allocator
+#endif
+
 #endif // BOOST_FIBERS_DETAIL_CONFIG_H

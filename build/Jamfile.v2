@@ -34,9 +34,11 @@ lib boost_fiber
     : asio/round_robin.cpp
       barrier.cpp
       condition.cpp
-      detail/worker_fiber.cpp
+      detail/fiber_base.cpp
+      detail/main_fiber.cpp
       detail/scheduler.cpp
       detail/spinlock.cpp
+      detail/worker_fiber.cpp
       fiber.cpp
       fiber_group.cpp
       future.cpp

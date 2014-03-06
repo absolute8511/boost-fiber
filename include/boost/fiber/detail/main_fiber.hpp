@@ -11,6 +11,7 @@
 
 #include <boost/fiber/detail/config.hpp>
 #include <boost/fiber/detail/fiber_base.hpp>
+#include <boost/fiber/detail/worker_fiber.hpp>
 
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
@@ -23,34 +24,40 @@ namespace detail {
 class main_fiber : public fiber_base
 {
 public:
-    static ptr_t make_pointer( main_fiber & n) {
-        ptr_t p( & n);
-        intrusive_ptr_add_ref( p.get() );
-        return p;
-    }
+    static ptr_t make_pointer( main_fiber & n);
 
-    main_fiber() :
-        fiber_base(),
-        ready_( false)
-    {}
+    main_fiber();
 
-    bool is_ready() const BOOST_NOEXCEPT
-    { return ready_; }
-
-    void set_ready() BOOST_NOEXCEPT
-    { ready_ = true; }
+    ~main_fiber();
 
     void deallocate_object()
     {}
 
-    id get_id() const BOOST_NOEXCEPT
-    { return id( const_cast< main_fiber * >( this) ); }
+    void resume( fiber_base * other)
+    {
+        BOOST_ASSERT( other);
+
+        other->yield_to( this);
+    }
 
 private:
-    atomic< bool >  ready_;
-
     main_fiber( main_fiber const&);
     main_fiber & operator=( main_fiber const&);
+
+    void yield_to( worker_fiber * other)
+    {
+        BOOST_ASSERT( other);
+        BOOST_ASSERT( other->caller);
+
+        // start worker-fiber
+        other->caller();
+
+        // set by the scheduler-algorithm
+        BOOST_ASSERT( is_running() );
+    }
+
+    void yield_to( main_fiber *)
+    { BOOST_ASSERT_MSG( false, "main-fiber can not resume main-fiber"); }
 };
 
 }}}

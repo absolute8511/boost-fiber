@@ -8,24 +8,19 @@
 #define BOOST_FIBERS_DETAIL_WORKER_FIBER_H
 
 #include <cstddef>
-#include <map>
 #include <vector>
 
 #include <boost/assert.hpp>
-#include <boost/atomic.hpp>
 #include <boost/config.hpp>
-#include <boost/cstdint.hpp>
+#include <boost/coroutine/symmetric_coroutine.hpp>
 #include <boost/exception_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/move/move.hpp>
-#include <boost/utility.hpp>
 
 #include <boost/fiber/attributes.hpp>
 #include <boost/fiber/detail/config.hpp>
 #include <boost/fiber/detail/fiber_base.hpp>
-#include <boost/fiber/detail/flags.hpp>
-#include <boost/fiber/detail/fss.hpp>
 #include <boost/fiber/detail/spinlock.hpp>
+#include <boost/fiber/stack_allocator.hpp>
 
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
@@ -40,120 +35,87 @@ namespace boost {
 namespace fibers {
 namespace detail {
 
+namespace coro = boost::coroutines;
+
+class main_fiber;
+
 class BOOST_FIBERS_DECL worker_fiber : public fiber_base
 {
 public:
     typedef intrusive_ptr< worker_fiber >     ptr_t;
 
-private:
-    enum state_t
-    {
-        READY = 0,
-        RUNNING,
-        WAITING,
-        TERMINATED
-    };
+    worker_fiber(attributes const& attrs, StackAllocator const& stack_alloc);
 
-    struct BOOST_FIBERS_DECL fss_data
-    {
-        void                       *   vp;
-        fss_cleanup_function::ptr_t     cleanup_function;
+    virtual ~worker_fiber()
+    { BOOST_ASSERT( waiting_.empty() ); }
 
-        fss_data() :
-            vp( 0), cleanup_function( 0)
-        {}
-
-        fss_data(
-                void * vp_,
-                fss_cleanup_function::ptr_t const& fn) :
-            vp( vp_), cleanup_function( fn)
-        { BOOST_ASSERT( cleanup_function); }
-
-        void do_cleanup()
-        { ( * cleanup_function)( vp); }
-    };
-
-    typedef std::map< uintptr_t, fss_data >   fss_data_t;
-
-    fss_data_t              fss_data_;
-
-protected:
-    atomic< state_t >       state_;
-    atomic< int >           flags_;
-    atomic< int >           priority_;
-    exception_ptr           except_;
-    spinlock                splk_;
-    std::vector< ptr_t >    waiting_;
-
-    void release();
-
-public:
-    worker_fiber();
-
-    virtual ~worker_fiber();
-
-    id get_id() const BOOST_NOEXCEPT
-    { return id( const_cast< worker_fiber * >( this) ); }
-
-    int priority() const BOOST_NOEXCEPT
-    { return priority_; }
-
-    void priority( int prio) BOOST_NOEXCEPT
-    { priority_ = prio; }
-
-    bool join( ptr_t const&);
-
-    bool interruption_blocked() const BOOST_NOEXCEPT
-    { return 0 != ( flags_.load() & flag_interruption_blocked); }
-
-    void interruption_blocked( bool blck) BOOST_NOEXCEPT;
-
-    bool interruption_requested() const BOOST_NOEXCEPT
-    { return 0 != ( flags_.load() & flag_interruption_requested); }
-
-    void request_interruption( bool req) BOOST_NOEXCEPT;
-
-    bool thread_affinity() const BOOST_NOEXCEPT
-    { return 0 != ( flags_.load() & flag_thread_affinity); }
-
-    void thread_affinity( bool req) BOOST_NOEXCEPT;
-
-    bool is_terminated() const BOOST_NOEXCEPT
-    { return TERMINATED == state_; }
-
-    bool is_ready() const BOOST_NOEXCEPT
-    { return READY == state_; }
-
-    bool is_running() const BOOST_NOEXCEPT
-    { return RUNNING == state_; }
-
-    bool is_waiting() const BOOST_NOEXCEPT
-    { return WAITING == state_; }
-
-    void set_terminated() BOOST_NOEXCEPT;
-
-    void set_ready() BOOST_NOEXCEPT;
-
-    void set_running() BOOST_NOEXCEPT;
-
-    void set_waiting() BOOST_NOEXCEPT;
-
-    void * get_fss_data( void const* vp) const;
-
-    void set_fss_data(
-        void const* vp,
-        fss_cleanup_function::ptr_t const& cleanup_fn,
-        void * data,
-        bool cleanup_existing);
+    bool join( fiber_base::ptr_t const&);
 
     bool has_exception() const BOOST_NOEXCEPT
     { return except_; }
 
-    void rethrow() const;
+    void rethrow() const
+    {
+        BOOST_ASSERT( has_exception() );
 
-    virtual void resume() = 0;
+        rethrow_exception( except_);
+    }
 
-    virtual void suspend() = 0;
+    void resume( fiber_base * other)
+    {
+        BOOST_ASSERT( other);
+
+        other->yield_to( this);
+    }
+
+protected:
+    friend class main_fiber;
+
+    typedef coro::symmetric_coroutine<
+        void, StackAllocator
+    >                                   coro_t;
+
+    typename coro_t::yield_type     *   callee;
+    typename coro_t::call_type          caller;
+
+    virtual void run() = 0;
+
+private:
+    exception_ptr                       except_;
+    spinlock                            splk_;
+    std::vector< fiber_base::ptr_t >    waiting_;
+
+    void trampoline_( typename coro_t::yield_type & yield);
+
+    void release();
+
+    void yield_to( worker_fiber * other)
+    {
+        BOOST_ASSERT( other);
+        BOOST_ASSERT( other->caller);
+        BOOST_ASSERT( callee);
+        BOOST_ASSERT( * callee);
+
+        // resume other worker-fiber
+        ( * callee)( other->caller);
+
+        // set by the scheduler-algorithm
+        BOOST_ASSERT( is_running() );
+    }
+
+    void yield_to( main_fiber *)
+    {
+        BOOST_ASSERT( callee);
+        BOOST_ASSERT( * callee);
+
+        // yield to main-fiber is equivalent to jump back to main-fiber
+        // the main-fiber (per scheduler only one) is at the start of
+        // this chain of worker-fibers (symmetric coroutines)
+        ( * callee)();
+
+        // set by the scheduler-algorithm
+        BOOST_ASSERT( is_running() );
+    }
 };
 
 }}}
