@@ -31,12 +31,6 @@ fiber_base::fiber_base() :
     flags_( 0)
 {}
 
-fiber_base::~fiber_base()
-{
-    BOOST_ASSERT( is_terminated() );
-    BOOST_ASSERT( waiting_.empty() );
-}
-
 void
 fiber_base::set_terminated() BOOST_NOEXCEPT
 {

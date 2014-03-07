@@ -28,8 +28,6 @@ public:
 
     main_fiber();
 
-    ~main_fiber();
-
     void deallocate_object()
     {}
 

@@ -31,8 +31,7 @@ project boost/fiber
     ;
 
 lib boost_fiber
-    : asio/round_robin.cpp
-      barrier.cpp
+    : barrier.cpp
       condition.cpp
       detail/fiber_base.cpp
       detail/main_fiber.cpp
@@ -41,6 +40,7 @@ lib boost_fiber
       detail/worker_fiber.cpp
       fiber.cpp
       fiber_group.cpp
+      fiber_manager.cpp
       future.cpp
       interruption.cpp
       mutex.cpp

@@ -44,7 +44,7 @@ class BOOST_FIBERS_DECL worker_fiber : public fiber_base
 public:
     typedef intrusive_ptr< worker_fiber >     ptr_t;
 
-    worker_fiber(attributes const& attrs, StackAllocator const& stack_alloc);
+    worker_fiber(attributes const& attrs, stack_allocator const& stack_alloc);
 
     virtual ~worker_fiber()
     { BOOST_ASSERT( waiting_.empty() ); }
@@ -72,7 +72,7 @@ protected:
     friend class main_fiber;
 
     typedef coro::symmetric_coroutine<
-        void, StackAllocator
+        void, stack_allocator
     >                                   coro_t;
 
     typename coro_t::yield_type     *   callee;
@@ -86,6 +86,8 @@ private:
     std::vector< fiber_base::ptr_t >    waiting_;
 
     void trampoline_( typename coro_t::yield_type & yield);
+    
+    void set_main_running_( main_fiber *);
 
     void release();
 
@@ -103,14 +105,18 @@ private:
         BOOST_ASSERT( is_running() );
     }
 
-    void yield_to( main_fiber *)
+    void yield_to( main_fiber * other)
     {
+        BOOST_ASSERT( other);
         BOOST_ASSERT( callee);
         BOOST_ASSERT( * callee);
+
+        set_main_running_( other);
 
         // yield to main-fiber is equivalent to jump back to main-fiber
         // the main-fiber (per scheduler only one) is at the start of
         // this chain of worker-fibers (symmetric coroutines)
+        // set main-fiber to running state
         ( * callee)();
 
         // set by the scheduler-algorithm

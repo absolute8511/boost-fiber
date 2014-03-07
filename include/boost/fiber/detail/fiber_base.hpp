@@ -94,7 +94,8 @@ public:
 
     fiber_base();
 
-    virtual ~fiber_base();
+    virtual ~fiber_base()
+    { BOOST_ASSERT( is_terminated() ); }
 
     bool is_terminated() const BOOST_NOEXCEPT
     { return TERMINATED == state_; }
@@ -117,7 +118,7 @@ public:
     void set_waiting() BOOST_NOEXCEPT;
 
     id get_id() const BOOST_NOEXCEPT
-    { return id( const_cast< worker_fiber * >( this) ); }
+    { return id( const_cast< fiber_base * >( this) ); }
 
     int priority() const BOOST_NOEXCEPT
     { return priority_; }
@@ -148,7 +149,7 @@ public:
         void * data,
         bool cleanup_existing);
 
-    virtual void yield_to( fiber_base * other) = 0;
+    virtual void resume( fiber_base * other) = 0;
 
     friend inline void intrusive_ptr_add_ref( fiber_base * p) BOOST_NOEXCEPT
     { ++p->use_count_; }
@@ -195,6 +196,9 @@ protected:
     virtual void yield_to( main_fiber *) = 0;
 
 private:
+    friend class main_fiber;
+    friend class worker_fiber;
+
     atomic< std::size_t >   use_count_;
     atomic< int >           flags_;
 

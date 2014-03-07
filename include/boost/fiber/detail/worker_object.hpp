@@ -43,7 +43,7 @@ public:
 
 #ifndef BOOST_NO_RVALUE_REFERENCES
     worker_object( Fn && fn, attributes const& attrs,
-                  StackAllocator const& stack_alloc,
+                  stack_allocator const& stack_alloc,
                   allocator_t const& alloc) :
         worker_fiber( attrs, stack_alloc),
         fn_( forward< Fn >( fn) ),
@@ -63,7 +63,7 @@ public:
     }
 #else
     worker_object( Fn fn, attributes const& attrs,
-                  StackAllocator const& stack_alloc,
+                  stack_allocator const& stack_alloc,
                   allocator_t const& alloc) :
         worker_fiber( attrs, stack_alloc),
         fn_( fn),
@@ -83,7 +83,7 @@ public:
     }
 
     worker_object( BOOST_RV_REF( Fn) fn, attributes const& attrs,
-                  StackAllocator const& stack_alloc,
+                  stack_allocator const& stack_alloc,
                   allocator_t const& alloc) :
         worker_fiber( attrs, stack_alloc),
         fn_( fn),

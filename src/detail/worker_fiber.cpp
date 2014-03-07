@@ -6,6 +6,7 @@
 
 #include <boost/fiber/detail/worker_fiber.hpp>
 
+#include <algorithm>
 #include <exception>
 
 #include <boost/bind.hpp>
@@ -14,6 +15,7 @@
 #include <boost/thread/locks.hpp>
 
 #include <boost/fiber/detail/scheduler.hpp>
+#include <boost/fiber/detail/main_fiber.hpp>
 #include <boost/fiber/exceptions.hpp>
 
 #ifdef BOOST_HAS_ABI_HEADERS
@@ -24,7 +26,7 @@ namespace boost {
 namespace fibers {
 namespace detail {
 
-worker_fiber::worker_fiber( attributes const& attr, StackAllocator const& stack_alloc) :
+worker_fiber::worker_fiber( attributes const& attrs, stack_allocator const& stack_alloc) :
     fiber_base(),
     callee( 0),
     caller(
@@ -42,9 +44,9 @@ worker_fiber::trampoline_( typename coro_t::yield_type & yield)
     BOOST_ASSERT( yield);
     BOOST_ASSERT( ! is_terminated() );
 
-    callee_ = & yield;
+    callee = & yield;
     set_running();
-    suspend();
+    yield();
 
     try
     {
@@ -65,21 +67,26 @@ worker_fiber::trampoline_( typename coro_t::yield_type & yield)
 
     set_terminated();
     release();
-    suspend();
+    yield();
 
     BOOST_ASSERT_MSG( false, "fiber already terminated");
 }
+
+inline
+void
+worker_fiber::set_main_running_( main_fiber * other)
+{ other->set_running(); }
 
 void
 worker_fiber::release()
 {
     BOOST_ASSERT( is_terminated() );
 
-    std::vector< ptr_t > waiting;
+    std::vector< fiber_base::ptr_t > waiting;
 
     // get all waiting fibers
     splk_.lock();
-    waiting.swap( waiting_);
+    std::swap( waiting, waiting_);
     splk_.unlock();
 
     // notify all waiting fibers

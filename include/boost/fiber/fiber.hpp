@@ -73,12 +73,12 @@ public:
     typedef void ( * fiber_fn)();
 
     explicit fiber( fiber_fn fn, attributes const& attr = attributes(),
-                    StackAllocator const& stack_alloc = StackAllocator(),
+                    stack_allocator const& stack_alloc = stack_allocator(),
                     std::allocator< fiber > const& alloc = std::allocator< fiber >() ) :
         impl_()
     {
         typedef detail::worker_object<
-                fiber_fn, StackAllocator, std::allocator< fiber >
+                fiber_fn, std::allocator< fiber >
             >                               object_t;
         object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -89,12 +89,12 @@ public:
 
     template< typename Allocator >
     explicit fiber( fiber_fn fn, attributes const& attr,
-                    StackAllocator const& stack_alloc,
+                    stack_allocator const& stack_alloc,
                     Allocator const& alloc) :
         impl_()
     {
         typedef detail::worker_object<
-                fiber_fn, StackAllocator, Allocator
+                fiber_fn, Allocator
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -105,12 +105,12 @@ public:
 #endif
     template< typename Fn >
     explicit fiber( BOOST_RV_REF( Fn) fn, attributes const& attr = attributes(),
-                    StackAllocator const& stack_alloc = StackAllocator(),
+                    stack_allocator const& stack_alloc = stack_allocator(),
                     std::allocator< fiber > const& alloc = std::allocator< fiber >() ) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, std::allocator< fiber >
+                Fn, std::allocator< fiber >
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -121,12 +121,12 @@ public:
 
     template< typename Fn, typename Allocator >
     explicit fiber( BOOST_RV_REF( Fn) fn, attributes const& attr,
-                    StackAllocator const& stack_alloc,
+                    stack_allocator const& stack_alloc,
                     Allocator const& alloc) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, Allocator
+                Fn, Allocator
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -137,12 +137,12 @@ public:
 #else
     template< typename Fn >
     explicit fiber( Fn fn, attributes const& attr = attributes(),
-                    StackAllocator const& stack_alloc = StackAllocator(),
+                    stack_allocator const& stack_alloc = stack_allocator(),
                     std::allocator< fiber > const& alloc = std::allocator< fiber >() ) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, std::allocator< fiber >
+                Fn, std::allocator< fiber >
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -153,12 +153,12 @@ public:
 
     template< typename Fn, typename Allocator >
     explicit fiber( Fn fn, attributes const& attr,
-                    StackAllocator const& stack_alloc,
+                    stack_allocator const& stack_alloc,
                     Allocator const& alloc) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, Allocator
+                Fn, Allocator
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -169,12 +169,12 @@ public:
 
     template< typename Fn >
     explicit fiber( BOOST_RV_REF( Fn) fn, attributes const& attr = attributes(),
-                    StackAllocator const& stack_alloc = StackAllocator(),
+                    stack_allocator const& stack_alloc = stack_allocator(),
                     std::allocator< fiber > const& alloc = std::allocator< fiber >() ) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, std::allocator< fiber >
+                Fn, std::allocator< fiber >
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(
@@ -185,12 +185,12 @@ public:
 
     template< typename Fn, typename Allocator >
     explicit fiber( BOOST_RV_REF( Fn) fn, attributes const& attr,
-                    StackAllocator const& stack_alloc,
+                    stack_allocator const& stack_alloc,
                     Allocator const& alloc) :
         impl_()
     {
         typedef detail::worker_object<
-                Fn, StackAllocator, Allocator
+                Fn, Allocator
             >                               object_t;
         typename object_t::allocator_t a( alloc);
         impl_ = ptr_t(

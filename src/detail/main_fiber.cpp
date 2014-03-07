@@ -28,12 +28,6 @@ main_fiber::main_fiber() :
     set_running();
 }
 
-main_fiber::~main_fiber()
-{
-    BOOST_FOREACH( fss_data_t::value_type & data, fss_data_)
-    { data.second.do_cleanup(); }
-}
-
 }}}
 
 #ifdef BOOST_HAS_ABI_HEADERS

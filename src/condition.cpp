@@ -28,18 +28,18 @@ condition::~condition()
 void
 condition::notify_one()
 {
-    detail::fiber_base::ptr_t n;
+    detail::fiber_base::ptr_t f;
 
     unique_lock< detail::spinlock > lk( splk_);
     // get one waiting fiber
     if ( ! waiting_.empty() ) {
-        n.swap( waiting_.front() );
+        f.swap( waiting_.front() );
         waiting_.pop_front();
     }
     lk.unlock();
 
     // notify waiting fiber
-    if ( n) n->set_ready();
+    if ( f) f->set_ready();
 }
 
 void
@@ -55,10 +55,10 @@ condition::notify_all()
     // notify all waiting fibers
     while ( ! waiting.empty() )
     {
-        detail::fiber_base::ptr_t n( waiting.front() );
+        detail::fiber_base::ptr_t f( waiting.front() );
         waiting.pop_front();
-        BOOST_ASSERT( n);
-        n->set_ready();
+        BOOST_ASSERT( f);
+        f->set_ready();
     }
 }
 
