@@ -50,8 +50,10 @@ private:
         // start worker-fiber
         other->caller();
 
-        // set by the scheduler-algorithm
-        BOOST_ASSERT( is_running() );
+        // set the main fiber to running state
+        // becaus other worker fiber terminate and
+        // thus did jump back to its starting context
+        set_running();
     }
 
     void yield_to( main_fiber *)

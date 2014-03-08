@@ -45,8 +45,11 @@ fiber_manager::~fiber_manager() BOOST_NOEXCEPT
     // therefore destructing wqueue_ && rqueue_
     // will destroy the fibers in this scheduler
     // if not referenced on other places
-    while ( ! wqueue_.empty() )
-        run();
+    
+    active_fiber_->set_terminated();
+
+//   while ( ! wqueue_.empty() )
+//       run();
 }
 
 void
@@ -117,9 +120,11 @@ void fiber_manager::resume_fiber( detail::fiber_base::ptr_t const& f)
     // set active fiber to state_running
     active_fiber_->set_running();
     // resume active fiber
-    active_fiber_->resume( tmp.get() );
-    // reset previous active fiber
-    active_fiber_ = tmp;
+    if ( active_fiber_ != tmp)
+    {
+        active_fiber_->resume( tmp.get() );
+        active_fiber_ = tmp;
+    }
 }
 
 void

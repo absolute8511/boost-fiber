@@ -99,11 +99,11 @@ worker_fiber::release()
 }
 
 bool
-worker_fiber::join( fiber_base::ptr_t const& p)
+worker_fiber::join( fiber_base::ptr_t const& f)
 {
     unique_lock< spinlock > lk( splk_);
     if ( is_terminated() ) return false;
-    waiting_.push_back( p);
+    waiting_.push_back( f);
     return true;
 }
 

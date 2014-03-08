@@ -21,11 +21,13 @@ int main()
 {
     try
     {
-        boost::fibers::fiber f1( boost::bind( fn, "abc", 0) );
-//        boost::fibers::fiber f2( boost::bind( fn, "xyz", 7) );
+        {
+            boost::fibers::fiber f1( boost::bind( fn, "abc", 5) );
+            boost::fibers::fiber f2( boost::bind( fn, "xyz", 7) );
 
-        f1.join();
-//        f2.join();
+            f1.join();
+            f2.join();
+        }
 
         std::cout << "done." << std::endl;
 
