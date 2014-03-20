@@ -30,7 +30,7 @@
 namespace boost {
 namespace fibers {
 
-bool fetch_ready( detail::worker_fiber * f)
+bool fetch_ready( detail::fiber_base * f)
 {
     BOOST_ASSERT( ! f->is_running() );
     BOOST_ASSERT( ! f->is_terminated() );
@@ -43,13 +43,13 @@ bool fetch_ready( detail::worker_fiber * f)
 }
 
 void
-fiber_manager::resume_( detail::worker_fiber * f)
+fiber_manager::resume_( detail::fiber_base * f)
 {
     BOOST_ASSERT( f);
     BOOST_ASSERT( f->is_ready() );
 
     // store active fiber in local var
-    detail::worker_fiber * tmp( active_fiber_);
+    detail::fiber_base * tmp( active_fiber_);
     // assign new fiber to active fiber
     active_fiber_ = f;
     // set active fiber to state_running
@@ -72,7 +72,7 @@ fiber_manager::fiber_manager() BOOST_NOEXCEPT :
     def_algo_( new round_robin() ),
     sched_algo_( def_algo_.get() ),
     main_fiber_(),
-    active_fiber_( 0),
+    active_fiber_( & main_fiber_),
     wqueue_()
 {}
 
@@ -91,7 +91,7 @@ fiber_manager::~fiber_manager() BOOST_NOEXCEPT
 }
 
 void
-fiber_manager::spawn( detail::worker_fiber * f)
+fiber_manager::spawn( detail::fiber_base * f)
 {
     BOOST_ASSERT( f);
     BOOST_ASSERT( f->is_ready() );
@@ -110,7 +110,7 @@ fiber_manager::run()
 
         // pop new fiber from ready-queue which is not complete
         // (example: fiber in ready-queue could be canceled by active-fiber)
-        detail::worker_fiber * f( sched_algo_->pick_next() );
+        detail::fiber_base * f( sched_algo_->pick_next() );
         if ( f)
         {
             BOOST_ASSERT_MSG( f->is_ready(), "fiber with invalid state in ready-queue");
@@ -119,11 +119,7 @@ fiber_manager::run()
         }
         else
         {
-            if ( active_fiber_)
-                active_fiber_->suspend();
-            else
-                this_thread::yield();
-            return;
+            this_thread::yield();
 #if 0
             // no fibers ready to run; the thread should sleep
             // until earliest fiber is scheduled to run
@@ -175,7 +171,7 @@ fiber_manager::yield()
 }
 
 void
-fiber_manager::join( detail::worker_fiber * f)
+fiber_manager::join( detail::fiber_base * f)
 {
     BOOST_ASSERT( f);
     BOOST_ASSERT( f != active_fiber_);

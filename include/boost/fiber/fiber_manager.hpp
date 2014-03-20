@@ -16,7 +16,7 @@
 #include <boost/fiber/detail/fifo.hpp>
 #include <boost/fiber/detail/main_fiber.hpp>
 #include <boost/fiber/detail/spinlock.hpp>
-#include <boost/fiber/detail/worker_fiber.hpp>
+#include <boost/fiber/detail/fiber_base.hpp>
 #include <boost/fiber/fiber.hpp>
 
 #ifdef BOOST_HAS_ABI_HEADERS
@@ -35,11 +35,11 @@ struct sched_algorithm
 {
     virtual ~sched_algorithm() {}
 
-    virtual void awakened( detail::worker_fiber *) = 0;
+    virtual void awakened( detail::fiber_base *) = 0;
 
-    virtual detail::worker_fiber * pick_next() = 0;
+    virtual detail::fiber_base * pick_next() = 0;
 
-    virtual void priority( detail::worker_fiber *, int) BOOST_NOEXCEPT = 0;
+    virtual void priority( detail::fiber_base *, int) BOOST_NOEXCEPT = 0;
 };
 
 struct fiber_manager : private noncopyable
@@ -53,14 +53,14 @@ struct fiber_manager : private noncopyable
         def_algo_.reset();
     }
 
-    void spawn( detail::worker_fiber *);
+    void spawn( detail::fiber_base *);
 
-    void priority( detail::worker_fiber * f, int prio) BOOST_NOEXCEPT
+    void priority( detail::fiber_base * f, int prio) BOOST_NOEXCEPT
     { sched_algo_->priority( f, prio); }
 
-    void join( detail::worker_fiber *);
+    void join( detail::fiber_base *);
 
-    detail::worker_fiber * active() BOOST_NOEXCEPT
+    detail::fiber_base * active() BOOST_NOEXCEPT
     { return active_fiber_; }
 
     void run();
@@ -84,12 +84,6 @@ struct fiber_manager : private noncopyable
     }
 #endif
 
-    // FIXME: must be removed
-    // allocate main_fiber on stack of mutext, condition, etc.
-    // and pass address of main_fiber to wait-container
-    detail::fiber_base * get_main_fiber()
-    { return new detail::main_fiber(); }
-
 private:
     typedef detail::fifo        wqueue_t;
 
@@ -97,10 +91,10 @@ private:
     sched_algorithm             *   sched_algo_;
 
     detail::main_fiber              main_fiber_;
-    detail::worker_fiber        *   active_fiber_;
+    detail::fiber_base          *   active_fiber_;
     wqueue_t                        wqueue_;
 
-    void resume_( detail:: worker_fiber *);
+    void resume_( detail:: fiber_base *);
 };
 
 }}
