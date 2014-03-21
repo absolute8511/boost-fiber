@@ -32,7 +32,7 @@ namespace fibers {
 
 bool fetch_ready( detail::fiber_base * f)
 {
-    BOOST_ASSERT( ! f->is_running() );
+    //BOOST_ASSERT( ! f->is_running() );
     BOOST_ASSERT( ! f->is_terminated() );
 
     // set fiber to state_ready if dead-line was reached
@@ -120,6 +120,7 @@ fiber_manager::run()
         else
         {
             this_thread::yield();
+            return;
 #if 0
             // no fibers ready to run; the thread should sleep
             // until earliest fiber is scheduled to run
@@ -171,7 +172,7 @@ fiber_manager::yield()
 }
 
 void
-fiber_manager::join( detail::fiber_base * f)
+fiber_manager::join( detail::worker_fiber * f)
 {
     BOOST_ASSERT( f);
     BOOST_ASSERT( f != active_fiber_);

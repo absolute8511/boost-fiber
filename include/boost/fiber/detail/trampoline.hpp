@@ -76,9 +76,7 @@ void trampoline( typename worker_fiber::coro_t::yield_type & yield)
     catch (...)
     { std::terminate(); }
 
-    f.set_terminated();
     f.release();
-    f.suspend();
 
     BOOST_ASSERT_MSG( false, "fiber already terminated");
 }

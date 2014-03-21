@@ -16,7 +16,7 @@
 #include <boost/utility.hpp>
 
 #include <boost/fiber/detail/config.hpp>
-#include <boost/fiber/detail/worker_fiber.hpp>
+#include <boost/fiber/detail/fiber_base.hpp>
 
 #ifdef BOOST_HAS_ABI_HEADERS
 #  include BOOST_ABI_PREFIX
@@ -37,83 +37,29 @@ public:
     bool empty() const BOOST_NOEXCEPT
     { return 0 == head_; }
 
-    std::size_t size() const BOOST_NOEXCEPT
-    {
-        std::size_t counter = 0; 
-        for ( worker_fiber * x = head_; x; x = x->next() )
-            ++counter;
-        return counter;
-    }
-
-    void push( worker_fiber * item) BOOST_NOEXCEPT
+    void push( fiber_base * item) BOOST_NOEXCEPT
     {
         BOOST_ASSERT( 0 != item);
+        BOOST_ASSERT( 0 == item->next() );
 
         if ( empty() )
-        {
             head_ = tail_ = item;
-            return;
-        }
-        tail_->next( item);
-        tail_ = tail_->next();
-    }
-
-    worker_fiber * head() const BOOST_NOEXCEPT
-    { return head_; }
-
-    void top( worker_fiber * item) BOOST_NOEXCEPT
-    { head_ = item; }
-
-    worker_fiber * tail() const BOOST_NOEXCEPT
-    { return tail_; }
-
-    void tail( worker_fiber * item) BOOST_NOEXCEPT
-    { tail_ = item; }
-
-    worker_fiber * pop() BOOST_NOEXCEPT
-    {
-        BOOST_ASSERT( ! empty() );
-
-        worker_fiber * item = head_;
-        head_ = head_->next();
-        if ( ! head_)
-            tail_ = head_;
         else
-            item->next_reset();
-        return item;
+        {
+            tail_->next( item);
+            tail_ = item;
+        }
     }
 
-    worker_fiber * find( worker_fiber * item) BOOST_NOEXCEPT
+    fiber_base * pop() BOOST_NOEXCEPT
     {
-        BOOST_ASSERT( 0 != item);
-
-        for ( worker_fiber * x = head_; x; x = x->next() )
-            if ( item == x) return x;
-        return 0;
-    }
-
-    void erase( worker_fiber * item) BOOST_NOEXCEPT
-    {
-        BOOST_ASSERT( item);
         BOOST_ASSERT( ! empty() );
 
-        if ( item == head_)
-        {
-            pop();
-            return;
-        }
-        for ( worker_fiber * x = head_; x; x = x->next() )
-        {
-            worker_fiber * nxt = x->next();
-            if ( ! nxt) return;
-            if ( item == nxt)
-            {
-                if ( tail_ == nxt) tail_ = x;
-                x->next( nxt->next() );
-                nxt->next_reset();
-                return;
-            }
-        }
+        fiber_base * item = head_;
+        head_ = head_->next();
+        if ( 0 == head_) tail_ = 0;
+        item->next_reset();
+        return item;
     }
 
     template< typename SchedAlgo, typename Fn >
@@ -121,25 +67,25 @@ public:
     {
         BOOST_ASSERT( sched_algo);
 
-        for ( worker_fiber * f = head_, * prev = head_; f; )
+        fiber_base * f = head_, * prev = 0;
+        while ( 0 != f)
         {
-            worker_fiber * nxt = f->next();
+            fiber_base * nxt = f->next();
             if ( fn( f) )
             {
                 if ( f == head_)
                 {
+                    BOOST_ASSERT( 0 == prev);
+
                     head_ = nxt;
-                    if ( ! head_)
-                        tail_ = head_;
-                    else
-                    {
-                        head_ = nxt;
-                        prev = nxt;
-                    }
+                    if ( 0 == head_)
+                        tail_ = 0;
                 }
                 else
                 {
-                    if ( ! nxt)
+                    BOOST_ASSERT( 0 != prev);
+
+                    if ( 0 == nxt)
                         tail_ = prev;
 
                     prev->next( nxt); 
@@ -160,8 +106,8 @@ public:
     }
 
 private:
-    worker_fiber    *  head_;
-    worker_fiber    *  tail_;
+    fiber_base    *  head_;
+    fiber_base    *  tail_;
 };
 
 }}}

@@ -38,55 +38,24 @@ void
 mutex::lock()
 {
     detail::fiber_base * n( detail::scheduler::instance()->active() );
-    if ( 0 != n)
+    for (;;)
     {
-        for (;;)
+        unique_lock< detail::spinlock > lk( splk_);
+
+        if ( UNLOCKED == state_)
         {
-            unique_lock< detail::spinlock > lk( splk_);
-
-            if ( UNLOCKED == state_)
-            {
-                state_ = LOCKED;
-                BOOST_ASSERT( ! owner_);
-                owner_ = this_fiber::get_id();
-                return;
-            }
-
-            // store this fiber in order to be notified later
-            BOOST_ASSERT( waiting_.end() == std::find( waiting_.begin(), waiting_.end(), n) );
-            waiting_.push_back( n);
-
-            // suspend this fiber
-            detail::scheduler::instance()->wait( lk);
+            state_ = LOCKED;
+            BOOST_ASSERT( ! owner_);
+            owner_ = this_fiber::get_id();
+            return;
         }
-    }
-    else
-    {
-        for (;;)
-        {
-            // local notification for main-fiber
-            n = detail::scheduler::instance()->get_main_fiber();
 
-            unique_lock< detail::spinlock > lk( splk_);
+        // store this fiber in order to be notified later
+        BOOST_ASSERT( waiting_.end() == std::find( waiting_.begin(), waiting_.end(), n) );
+        waiting_.push_back( n);
 
-            if ( UNLOCKED == state_)
-            {
-                state_ = LOCKED;
-                BOOST_ASSERT( ! owner_);
-                owner_ = this_fiber::get_id();
-                return;
-            }
-
-            // store this fiber in order to be notified later
-            BOOST_ASSERT( waiting_.end() == std::find( waiting_.begin(), waiting_.end(), n) );
-            waiting_.push_back( n);
-            lk.unlock();
-
-            // wait until main-fiber gets notified
-            while ( ! n->is_ready() )
-                // run scheduler
-                detail::scheduler::instance()->run();
-        }
+        // suspend this fiber
+        detail::scheduler::instance()->wait( lk);
     }
 }
 

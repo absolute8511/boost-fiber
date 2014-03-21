@@ -15,14 +15,15 @@ void fn( std::string const& str, int n)
 		std::cout << i << ": " << str << std::endl;
 		boost::this_fiber::yield();
 	}
+    std::cout << str << " finished" << std::endl;
 }
 
 int main()
 {
     try
     {
-        boost::fibers::fiber f1( boost::bind( fn, "abc", 5) );
-        boost::fibers::fiber f2( boost::bind( fn, "xyz", 7) );
+        boost::fibers::fiber f1( boost::bind( fn, "abc", 1) );
+        boost::fibers::fiber f2( boost::bind( fn, "xyz", 2) );
 
         f1.join();
         f2.join();

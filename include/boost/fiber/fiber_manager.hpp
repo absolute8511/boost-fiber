@@ -58,7 +58,7 @@ struct fiber_manager : private noncopyable
     void priority( detail::fiber_base * f, int prio) BOOST_NOEXCEPT
     { sched_algo_->priority( f, prio); }
 
-    void join( detail::fiber_base *);
+    void join( detail::worker_fiber *);
 
     detail::fiber_base * active() BOOST_NOEXCEPT
     { return active_fiber_; }
