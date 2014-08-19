@@ -47,6 +47,12 @@ public:
         else
         {
             worker_fiber * f = head_, * prev = 0;
+            if (item->time_point() == (clock_type::time_point::max)())
+            {
+                tail_->next(item);
+                tail_ = item;
+                return;
+            }
             do
             {
                 worker_fiber * nxt = f->next();
