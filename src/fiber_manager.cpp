@@ -131,15 +131,15 @@ fiber_manager::run()
             // optimize the fiber schedule:
             // if there is a fiber different from current active fiber,
             // we should resume it first.
-            bool is_self = (active_fiber_ == f);
-            while (active_fiber_ == f)
-            {
-                f = sched_algo_->pick_next();
-            }
-            if (is_self && f != NULL)
-                sched_algo_->awakened(active_fiber_);
-            if (f == NULL)
-                f = active_fiber_;
+            //bool is_self = (active_fiber_ == f);
+            //while (active_fiber_ == f)
+            //{
+            //    f = sched_algo_->pick_next();
+            //}
+            //if (is_self && f != NULL)
+            //    sched_algo_->awakened(active_fiber_);
+            //if (f == NULL)
+            //    f = active_fiber_;
 
             resume_( f);
             return;
@@ -181,7 +181,8 @@ fiber_manager::wait_until( clock_type::time_point const& timeout_time,
     active_fiber_->time_point( timeout_time);
     wqueue_.push( active_fiber_);
     // run next fiber
-    run();
+    //run();
+    active_fiber_->suspend();
 
     return clock_type::now() < timeout_time;
 }
@@ -195,9 +196,11 @@ fiber_manager::yield()
     // set active fiber to state_waiting
     active_fiber_->set_ready();
     // push active fiber to scheduler-algo
-    sched_algo_->awakened( active_fiber_);
+    wqueue_.push(active_fiber_);
+    active_fiber_->suspend();
+    //sched_algo_->awakened( active_fiber_);
     // run next fiber
-    run();
+    //run();
 }
 
 void
@@ -219,7 +222,9 @@ fiber_manager::join( detail::worker_fiber * f)
             // FIXME: better state_running and no suspend
             active_fiber_->set_ready();
         // run next fiber
-        run();
+        //run();
+        wqueue_.push(active_fiber_);
+        active_fiber_->suspend();
     }
     else
     {
