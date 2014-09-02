@@ -86,6 +86,7 @@ struct fiber_manager : private noncopyable
     clock_type::time_point next_wakeup();
 
     void migrate( detail::worker_fiber *);
+    void move_to_run( detail::worker_fiber* );
 
 protected:
     typedef detail::waiting_queue   wqueue_t;

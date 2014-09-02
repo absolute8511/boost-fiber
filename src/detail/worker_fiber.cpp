@@ -28,6 +28,7 @@ void * worker_fiber::null_ptr = 0;
 worker_fiber::worker_fiber( coro_t::yield_type * callee) :
     fiber_base(),
     fss_data_(),
+    prev_( 0),
     nxt_( 0),
     tp_( (clock_type::time_point::max)() ),
     callee_( callee),
@@ -43,6 +44,14 @@ worker_fiber::~worker_fiber()
 {
     BOOST_ASSERT( is_terminated() );
     BOOST_ASSERT( waiting_.empty() );
+}
+
+void
+worker_fiber::set_ready()
+{
+    state_t previous = state_.exchange( READY);
+    BOOST_ASSERT( WAITING == previous || RUNNING == previous || READY == previous);
+    boost::fibers::detail::scheduler::instance()->move_to_run(this);
 }
 
 void
@@ -88,7 +97,10 @@ void
 worker_fiber::request_interruption( bool req) BOOST_NOEXCEPT
 {
     if ( req)
+    {
         flags_ |= flag_interruption_requested;
+        set_ready();
+    }
     else
         flags_ &= ~flag_interruption_requested;
 }

@@ -87,6 +87,7 @@ private:
     static void * null_ptr;
 
     fss_data_t                      fss_data_;
+    worker_fiber                *   prev_;
     worker_fiber                *   nxt_;
     clock_type::time_point          tp_;
     coro_t::yield_type          *   callee_;
@@ -153,11 +154,7 @@ public:
         BOOST_ASSERT( RUNNING == previous);
     }
 
-    void set_ready() BOOST_NOEXCEPT
-    {
-        state_t previous = state_.exchange( READY);
-        BOOST_ASSERT( WAITING == previous || RUNNING == previous || READY == previous);
-    }
+    void set_ready() BOOST_NOEXCEPT;
 
     void set_running() BOOST_NOEXCEPT
     {
@@ -215,6 +212,15 @@ public:
 
         BOOST_ASSERT( is_running() ); // set by the scheduler-algorithm
     }
+
+    worker_fiber * prev() const
+    { return prev_; }
+
+    void prev( worker_fiber * prv)
+    { prev_ = prv; }
+
+    void prev_reset()
+    { prev_ = 0; }
 
     worker_fiber * next() const
     { return nxt_; }

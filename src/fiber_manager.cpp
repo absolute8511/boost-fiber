@@ -110,7 +110,7 @@ fiber_manager::spawn( detail::worker_fiber * f)
     BOOST_ASSERT( f);
     BOOST_ASSERT( f->is_ready() );
 
-    sched_algo_->awakened( f);
+    //sched_algo_->awakened( f);
 }
 
 void
@@ -196,7 +196,7 @@ fiber_manager::yield()
     // set active fiber to state_waiting
     active_fiber_->set_ready();
     // push active fiber to scheduler-algo
-    wqueue_.push(active_fiber_);
+    // wqueue_.push(active_fiber_);
     active_fiber_->suspend();
     //sched_algo_->awakened( active_fiber_);
     // run next fiber
@@ -223,7 +223,6 @@ fiber_manager::join( detail::worker_fiber * f)
             active_fiber_->set_ready();
         // run next fiber
         //run();
-        wqueue_.push(active_fiber_);
         active_fiber_->suspend();
     }
     else
@@ -245,6 +244,14 @@ fiber_manager::migrate( detail::worker_fiber * f)
 
     spawn( f);
     run();
+}
+
+void
+fiber_manager::move_to_run(detail::worker_fiber* f)
+{
+    if (f == NULL)
+        return;
+    wqueue_.move_to_run(sched_algo_, f);
 }
 
 }}
