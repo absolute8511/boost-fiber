@@ -110,7 +110,7 @@ fiber_manager::spawn( detail::worker_fiber * f)
     BOOST_ASSERT( f);
     BOOST_ASSERT( f->is_ready() );
 
-    //sched_algo_->awakened( f);
+    sched_algo_->awakened( f);
 }
 
 void
@@ -128,19 +128,6 @@ fiber_manager::run()
         if ( f)
         {
             BOOST_ASSERT_MSG( f->is_ready(), "fiber with invalid state in ready-queue");
-            // optimize the fiber schedule:
-            // if there is a fiber different from current active fiber,
-            // we should resume it first.
-            //bool is_self = (active_fiber_ == f);
-            //while (active_fiber_ == f)
-            //{
-            //    f = sched_algo_->pick_next();
-            //}
-            //if (is_self && f != NULL)
-            //    sched_algo_->awakened(active_fiber_);
-            //if (f == NULL)
-            //    f = active_fiber_;
-
             resume_( f);
             return;
         }
@@ -196,7 +183,7 @@ fiber_manager::yield()
     // set active fiber to state_waiting
     active_fiber_->set_ready();
     // push active fiber to scheduler-algo
-    // wqueue_.push(active_fiber_);
+    wqueue_.push(active_fiber_);
     active_fiber_->suspend();
     //sched_algo_->awakened( active_fiber_);
     // run next fiber
