@@ -90,7 +90,7 @@ public:
 
     virtual bool is_ready() const BOOST_NOEXCEPT = 0;
 
-    virtual void set_ready() BOOST_NOEXCEPT = 0;
+    virtual void set_ready(bool locked = false) BOOST_NOEXCEPT = 0;
 
     virtual id get_id() const BOOST_NOEXCEPT = 0;
 };

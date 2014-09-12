@@ -71,12 +71,12 @@ worker_fiber::release()
 }
 
 void
-worker_fiber::set_ready()
+worker_fiber::set_ready(bool locked)
 {
     state_t previous = state_.exchange( READY);
     BOOST_ASSERT( WAITING == previous || RUNNING == previous || READY == previous);
     (void)previous;
-    scheduler::instance()->move_to_run(this);
+    fm_move_to_run(this, locked);
 }
 
 bool

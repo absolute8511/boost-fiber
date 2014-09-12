@@ -153,7 +153,7 @@ public:
         (void)previous;
     }
 
-    void set_ready() BOOST_NOEXCEPT;
+    void set_ready(bool locked = false) BOOST_NOEXCEPT;
 
     void set_running() BOOST_NOEXCEPT
     {

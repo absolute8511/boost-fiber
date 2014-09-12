@@ -48,6 +48,7 @@ public:
             // already in waiting queue.
             return;
         }
+        unique_lock< detail::spinlock > lk( splk_);
         item->attach_queue(&head_, &tail_);
         if ( empty() )
             head_ = tail_ = item;
@@ -66,7 +67,7 @@ public:
                 return;
             }
 
-            if (item->time_point() == (clock_type::time_point::max)())
+            if (item->time_point() == (chrono::high_resolution_clock::time_point::max)())
             {
                 tail_->next(item);
                 item->prev(tail_);
@@ -124,8 +125,12 @@ public:
     }
 
     template< typename SchedAlgo >
-    void move_to_run( SchedAlgo * sched_algo, detail::worker_fiber* f)
+    void move_to_run( SchedAlgo * sched_algo, detail::worker_fiber* f, bool locked = false)
     {
+        if (!locked)
+        {
+            splk_.lock();
+        }
         // head_/tail_ can not be used here, since it can be called in other thread.
         BOOST_ASSERT(!f->is_running());
         if (f->prev() == NULL)
@@ -137,23 +142,29 @@ public:
             if (f->head() == NULL)
             {
                 // not in any queue.
-                return;
-            }
-            // moving f to the head of queue so that it can be awakened first.
-            if (0 == f->next())
-            {
-                *(f->tail()) = f->prev();
             }
             else
             {
-                f->next()->prev(f->prev());
-            }
-            f->prev()->next(f->next());
+                // moving f to the head of queue so that it can be awakened first.
+                if (0 == f->next())
+                {
+                    *(f->tail()) = f->prev();
+                }
+                else
+                {
+                    f->next()->prev(f->prev());
+                }
+                f->prev()->next(f->next());
 
-            f->next(*(f->head()));
-            f->prev_reset();
-            (*(f->head()))->prev(f);
-            *(f->head()) = f;
+                f->next(*(f->head()));
+                f->prev_reset();
+                (*(f->head()))->prev(f);
+                *(f->head()) = f;
+            }
+        }
+        if (!locked)
+        {
+            splk_.unlock();
         }
     }
 
@@ -162,7 +173,8 @@ public:
     {
         BOOST_ASSERT( sched_algo);
 
-        worker_fiber * f = head_, * prev = 0;
+        unique_lock< detail::spinlock > lk( splk_);
+        worker_fiber * f = head_;
         chrono::high_resolution_clock::time_point now( chrono::high_resolution_clock::now() );
         while ( 0 != f)
         {
@@ -197,6 +209,7 @@ public:
 
     void swap( waiting_queue & other)
     {
+        unique_lock< detail::spinlock > lk( splk_);
         std::swap( head_, other.head_);
         std::swap( tail_, other.tail_);
     }
@@ -204,6 +217,7 @@ public:
 private:
     worker_fiber    *  head_;
     worker_fiber    *  tail_;
+    detail::spinlock                        splk_;
 };
 
 }}}

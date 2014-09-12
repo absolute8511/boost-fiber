@@ -38,7 +38,7 @@ bool fetch_ready( detail::worker_fiber * f, chrono::high_resolution_clock::time_
     // set fiber to state_ready if dead-line was reached
     // set fiber to state_ready if interruption was requested
     if ( f->time_point() <= now || f->interruption_requested() )
-        f->set_ready();
+        f->set_ready(true);
     return f->is_ready();
 }
 
@@ -287,11 +287,12 @@ void fm_migrate( detail::worker_fiber * f)
     fm_run();
 }
 
-void fm_move_to_run( detail::worker_fiber * f)
+void fm_move_to_run( detail::worker_fiber * f, bool locked)
 {
     if (f == NULL)
         return;
-    wqueue_.move_to_run(sched_algo_, f);
+    fiber_manager * fm = detail::scheduler::instance();
+    fm->wqueue_.move_to_run(fm->sched_algo_, f, locked);
 }
 
 }}

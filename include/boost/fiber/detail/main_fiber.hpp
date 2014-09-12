@@ -35,7 +35,7 @@ public:
     bool is_ready() const BOOST_NOEXCEPT
     { return ready_; }
 
-    void set_ready() BOOST_NOEXCEPT
+    void set_ready(bool locked = false) BOOST_NOEXCEPT
     { ready_ = true; }
 
     id get_id() const BOOST_NOEXCEPT
