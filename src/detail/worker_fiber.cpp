@@ -63,7 +63,7 @@ worker_fiber::release()
 
     // notify all waiting fibers
     BOOST_FOREACH( worker_fiber * p, waiting)
-    { p->set_ready(); }
+    { p->set_ready(false); }
 
     // release all fiber-specific-pointers
     BOOST_FOREACH( fss_data_t::value_type & data, fss_data_)
@@ -103,7 +103,7 @@ worker_fiber::request_interruption( bool req) BOOST_NOEXCEPT
     if ( req)
     {
         flags_ |= flag_interruption_requested;
-        set_ready();
+        set_ready(false);
     }
     else
         flags_ &= ~flag_interruption_requested;

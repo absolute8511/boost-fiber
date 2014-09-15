@@ -24,7 +24,7 @@ namespace fibers {
 void
 fiber::start_()
 {
-    impl_->set_ready();
+    impl_->set_ready(false);
     fm_spawn( impl_.get() );
 }
 

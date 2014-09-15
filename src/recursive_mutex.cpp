@@ -132,7 +132,7 @@ recursive_mutex::unlock()
         owner_ = detail::worker_fiber::id();
         state_ = UNLOCKED;
         lk.unlock();
-        if ( n) n->set_ready();
+        if ( n) n->set_ready(false);
     }
 }
 

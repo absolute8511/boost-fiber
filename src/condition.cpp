@@ -37,7 +37,7 @@ condition::notify_one()
     lk.unlock();
 
     // notify waiting fiber
-    if ( n) n->set_ready();
+    if ( n) n->set_ready(false);
 }
 
 void
@@ -56,7 +56,7 @@ condition::notify_all()
         detail::fiber_base * n( waiting.front() );
         waiting.pop_front();
         BOOST_ASSERT( n);
-        n->set_ready();
+        n->set_ready(false);
     }
 }
 

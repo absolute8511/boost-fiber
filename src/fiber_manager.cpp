@@ -228,7 +228,7 @@ void fm_yield()
     BOOST_ASSERT( fm->active_fiber_->is_running() );
 
     // set active-fiber to state_waiting
-    fm->active_fiber_->set_ready();
+    fm->active_fiber_->set_ready(false);
     // push active-fiber to fm->wqueue_
     fm->wqueue_.push( fm->active_fiber_);
     // suspend active-fiber
@@ -254,7 +254,7 @@ void fm_join( detail::worker_fiber * f)
             // f must be already terminated therefore we set
             // active-fiber to state_ready
             // FIXME: better state_running and no suspend
-            fm->active_fiber_->set_ready();
+            fm->active_fiber_->set_ready(false);
         // suspend active-fiber
         fm->active_fiber_->suspend();
     }
